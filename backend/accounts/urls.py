@@ -8,4 +8,5 @@ urlpatterns = [
     path("refresh/", TokenRefreshView.as_view(), name="token-refresh"),
     path("me/", views.me, name="me"),
     path("writers/", views.WriterListView.as_view(), name="writer-list"),
+    path("editors/", views.EditorListView.as_view(), name="editor-list"),
 ]

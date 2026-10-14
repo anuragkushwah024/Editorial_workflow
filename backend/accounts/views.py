@@ -29,6 +29,16 @@ class WriterListView(generics.ListAPIView):
         return User.objects.filter(role=User.Role.WRITER, is_active=True)
 
 
+class EditorListView(generics.ListAPIView):
+    """Choices for a section's owning editor."""
+
+    serializer_class = UserSerializer
+    permission_classes = [IsEditor]
+
+    def get_queryset(self):
+        return User.objects.filter(role=User.Role.EDITOR, is_active=True)
+
+
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def health(request):
