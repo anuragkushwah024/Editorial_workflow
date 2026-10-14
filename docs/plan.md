@@ -31,6 +31,12 @@ Sections come before articles because an article cannot exist without a section,
 - On Oct 14 I reviewed it, ran all 43 tests, checked it in the browser as an editor and as a writer, and committed it in steps: API, tests, pages.
 - Time: about 2 hours.
 
+**Day 2 (Phase 3, steps 1-2):**
+- Later on Oct 14 I started Phase 3: the articles API (who can create, see and edit), then the lifecycle (submit, approve, schedule, publish, unpublish, and the edit rules).
+- Each step: my prompt, then tests (98 passing), then separate commits for code and tests.
+- Time: about __ hours.
+- Left for Day 3: revisions, the timeline and comments API, and the article pages. This pushes Phase 4 a little later than planned.
+
 ## What I cut
 
 Nothing yet.

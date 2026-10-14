@@ -108,3 +108,33 @@ This was built on Oct 12, right after Phase 1, and I reviewed and committed it o
   - then the pages, checked in the browser as an editor (create, assign, archive) and as a writer (sees only their section, with no edit buttons).
 
 **What went wrong:** after assigning a writer, the API response still showed the old writer count (0 instead of 1). The section and its count were loaded before the change, so the response used a stale number. The fix reloads the section after every change. A test caught this before it reached the browser.
+
+## Day 2 (continued): articles (Phase 3)
+
+### 8. Articles API
+
+> Start Phase 3, step 1: the articles API. Writers can create articles only in the sections they are assigned to. A writer can edit only their own articles. Editors can see and edit all articles. A writer must not see articles from sections they aren't assigned to. Also add tests.
+
+**Result:** create, list, view and edit for articles, with 25 tests (68 in total).
+
+**What I decided / checked:**
+- I set the four access rules myself. The last one means a writer removed from a section loses access to their own articles there too. I kept it, and wrote down the trade-off in Decision 17.
+- The author always comes from the login, never from the request (Decision 18).
+- I committed the API and the tests separately.
+
+**What went wrong:** my first `git add` failed with "not a git repository", because the terminal was open in my home folder, not the project folder. I now `cd` into the project before running git.
+
+### 9. Article lifecycle
+
+> Phase 3, step 2: the article lifecycle. Put all status changes inside a single central function so that all lifecycle rules reside in one place.
+> - Submit: the author moves Draft to In Review. Approve: an editor moves In Review to Approved, but never their own article. Schedule: an editor moves Approved to Scheduled with a future time. Publish now: Approved to Published, publish time = now. Unpublish: Scheduled or Published back to Approved. Writers can't approve, schedule, publish or unpublish.
+> - Editing an Approved or Scheduled article sends it back to In Review. A Published article can't be edited directly.
+> - Illegal moves are rejected with a clear message. Every status change goes in the timeline with old status, new status and who made it.
+> - Tests for every allowed move, the edit rules, and the important illegal moves (self-approval, writers making editor moves, scheduling in the past, skipping steps).
+
+**Result:** `lifecycle.py` with the five moves, the edit rules, and 30 tests (98 in total).
+
+**What I decided / checked:**
+- I asked for one central function so the rules can be read in one place (Decision 19).
+- The timeline also stores the person's role at that moment, so the history stays correct if their role changes later.
+- I committed the lifecycle code and its tests separately.

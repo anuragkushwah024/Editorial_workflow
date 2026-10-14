@@ -99,3 +99,33 @@
 - **Rejected:** relying only on the database's exact-match UNIQUE rule.
 - **Why:** two sections called "Tech" and "tech" would confuse everyone. The database check still catches two requests arriving at the same moment.
 
+
+## Decision 17 — Article visibility follows section visibility
+
+- **Chose:** a writer sees articles only in active sections they are assigned to, including other writers' articles there. Anything else is a 404. A writer removed from a section also loses access to the articles they wrote in it.
+- **Rejected:** letting writers always see their own articles, whatever their assignments.
+- **Why:** one rule ("you see what's in your sections") is simpler to enforce and explain than two, and it reuses `visible_sections()` from Decision 13. The cost: goal 5 asks for "one list of every article they have written", and a removed writer's list will now be missing those articles. I accepted that, because removing someone from a section should cut their access to it.
+
+## Decision 18 — The author is always the logged-in user
+
+- **Chose:** the server sets the author to whoever creates the article, and ignores any author or status sent by the browser. When an editor creates an article, the editor is its author.
+- **Rejected:** letting an editor pick an author when creating.
+- **Why:** the no-self-approval rule depends on knowing who really wrote the piece. If the author could be chosen, an editor could name someone else as author and then approve their own work.
+
+## Decision 19 — All lifecycle rules in one file
+
+- **Chose:** `articles/lifecycle.py` holds a table of the five moves (who, from which status, to which status, error message). One function, `_set_status()`, is the only code that writes a status, and it always writes the timeline entry too. The article row is locked during a move (`select_for_update`).
+- **Rejected:** checking the rules separately inside each API endpoint.
+- **Why:** the lifecycle is the heart of goal 4. With the rules in one table, I can read the whole lifecycle in one place, and a status can never change without a timeline entry. The lock stops two editors approving or publishing the same article at the same moment.
+
+## Decision 20 — No self-approval, even for editors; 403 versus 400
+
+- **Chose:** the approve move needs an editor who is not the article's author. A wrong person gets 403 ("you can never do this"); a wrong status gets 400 ("not from this status").
+- **Rejected:** allowing editors to approve their own articles.
+- **Why:** the brief's own story is a piece that ran uncorrected because the only editor who looked at it also wrote it. Splitting 403 and 400 tells the user whether to ask someone else or to wait for the right stage.
+
+## Decision 21 — Editing after approval goes back to review; publishing saves the live text
+
+- **Chose:** editing an Approved or Scheduled article moves it back to In Review and clears its scheduled time. A Published article can't be edited at all (revisions come next). When an article is published, the exact title and body that went live are copied into the timeline entry.
+- **Rejected:** allowing small edits after approval without a new review.
+- **Why:** otherwise text could change after an editor signed it off. Saving the published text answers the brief's "nobody can say what the original said".
