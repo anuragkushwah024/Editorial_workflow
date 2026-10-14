@@ -74,3 +74,28 @@
 - **Rejected:** Render's free PostgreSQL.
 - **Why:** Render's free database expires after a limited period, which could be before the review happens. Supabase's direct connection is IPv6-only and Render's free tier cannot reach it, so the pooler connection string is the one to use.
 - **Status:** planned; the database will be created on Supabase when I deploy (Day 4).
+
+## Decision 13 — One place decides who sees which sections
+
+- **Chose:** a single helper, `visible_sections(user)` in `sections/access.py`, used by every section query. Editors get all sections. Writers get only sections whose id is in their assignments (a subquery).
+- **Rejected:** writing the filter separately in each view, or filtering writers with a join on the assignments table.
+- **Why:** the visibility rule is the core of goal 1, so it should live in exactly one place. A join would also limit the writer count on each section to the current writer's own row, so a writer would always see "1 writer". The subquery avoids that.
+
+## Decision 14 — 404, not 403, for sections a writer can't see
+
+- **Chose:** if a writer opens a section they aren't assigned to, or an archived one, the API answers 404 Not Found.
+- **Rejected:** 403 Forbidden.
+- **Why:** 403 would confirm that the section exists. Writers should only know about their own sections.
+
+## Decision 15 — Sections are archived, never deleted
+
+- **Chose:** no delete endpoint at all. Archive and restore only. Writers can't be added to or removed from an archived section until it is restored.
+- **Rejected:** a normal delete.
+- **Why:** the brief says archiving must keep the section's data and articles. Deleting would also break the article history. Blocking writer changes on archived sections keeps archived ones frozen.
+
+## Decision 16 — Section names are unique, ignoring capitals
+
+- **Chose:** the serializer rejects a name that matches an existing one in any case ("tech" vs "Tech"). The database also has a UNIQUE constraint as a backstop.
+- **Rejected:** relying only on the database's exact-match UNIQUE rule.
+- **Why:** two sections called "Tech" and "tech" would confuse everyone. The database check still catches two requests arriving at the same moment.
+

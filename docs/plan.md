@@ -24,7 +24,12 @@ Sections come before articles because an article cannot exist without a section,
 **Day 1 (Phase 1):**
 - Phase 1 was built with AI help on Oct 12, from my prompts (see ai-prompts.md).
 - On Oct 13 I reviewed it, re-ran the tests, wrote the decisions, architecture and ER diagram, and split it into commits.
-- Time: about 2 hours .
+- Time: about 2-3 hours.
+
+**Day 2 (Phase 2):**
+- Phase 2 (sections and writer assignments) was built with AI help on Oct 12, right after Phase 1, from my prompt (see ai-prompts.md).
+- On Oct 14 I reviewed it, ran all 43 tests, checked it in the browser as an editor and as a writer, and committed it in steps: API, tests, pages.
+- Time: about 2 hours.
 
 ## What I cut
 
