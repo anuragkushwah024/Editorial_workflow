@@ -2,7 +2,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 
 export default function Layout() {
-  const { user, logout } = useAuth();
+  const { user, logout, isEditor } = useAuth();
   return (
     <div className="app">
       <header className="topbar">
@@ -11,6 +11,7 @@ export default function Layout() {
           <NavLink to="/" end>
             Dashboard
           </NavLink>
+          <NavLink to="/sections">{isEditor ? "Sections" : "My sections"}</NavLink>
         </nav>
         <div className="user-box">
           <span>

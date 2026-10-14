@@ -49,7 +49,17 @@ export function errorMessage(error) {
   if (data.detail) {
     return data.detail;
   }
-  return JSON.stringify(data);
+  // Field errors look like {"name": ["A section with this name already exists."]}.
+  const parts = [];
+  for (const field of Object.keys(data)) {
+    const value = data[field];
+    if (Array.isArray(value)) {
+      parts.push(value.join(" "));
+    } else {
+      parts.push(String(value));
+    }
+  }
+  return parts.join(" ");
 }
 
 export default api;
