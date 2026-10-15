@@ -51,8 +51,9 @@ class ArticleApiTestCase(APITestCase):
         )
 
     def titles(self, response):
+        # The list is paginated: the articles are under "results".
         result = []
-        for item in response.data:
+        for item in response.data["results"]:
             result.append(item["title"])
         return sorted(result)
 
@@ -153,7 +154,7 @@ class VisibilityTests(ArticleApiTestCase):
 
     def test_writer_with_no_sections_sees_nothing(self):
         self.as_user(self.outsider)
-        self.assertEqual(self.client.get("/api/articles/").data, [])
+        self.assertEqual(self.client.get("/api/articles/").data["results"], [])
 
     def test_writer_cannot_open_article_in_unassigned_section(self):
         self.as_user(self.writer)
@@ -162,7 +163,7 @@ class VisibilityTests(ArticleApiTestCase):
     def test_writer_removed_from_section_loses_its_articles(self):
         SectionAssignment.objects.filter(section=self.tech, writer=self.writer).delete()
         self.as_user(self.writer)
-        self.assertEqual(self.client.get("/api/articles/").data, [])
+        self.assertEqual(self.client.get("/api/articles/").data["results"], [])
         # Even the article they wrote themselves.
         self.assertEqual(self.client.get(self.url(self.tech_article)).status_code, 404)
 
@@ -243,7 +244,7 @@ class SectionFilterTests(ArticleApiTestCase):
     def test_writer_filtering_an_unassigned_section_gets_nothing(self):
         self.as_user(self.writer)
         response = self.client.get("/api/articles/?section=" + str(self.politics.id))
-        self.assertEqual(response.data, [])
+        self.assertEqual(response.data["results"], [])
 
     def test_editor_sees_articles_of_an_archived_section_when_asking_for_it(self):
         self.tech.is_archived = True
