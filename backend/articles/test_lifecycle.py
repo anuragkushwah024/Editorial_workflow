@@ -229,7 +229,7 @@ class IllegalMoveTests(LifecycleTestCase):
         self.as_user(self.editor)
         response = self.act(self.article, "publish")
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data["detail"], "Only an Approved article can be published.")
+        self.assertEqual(response.data["detail"], "Only an Approved or Scheduled article can be published.")
 
     def test_cannot_schedule_an_article_in_review(self):
         self.put_in(self.article, Status.IN_REVIEW)

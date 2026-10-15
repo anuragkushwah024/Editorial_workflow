@@ -276,7 +276,7 @@ class RevisionRuleTests(RevisionTestCase):
         self.as_user(self.editor)
         response = self.act(revision.id, "publish")
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data["detail"], "Only an Approved revision can be published.")
+        self.assertEqual(response.data["detail"], "Only an Approved or Scheduled revision can be published.")
 
     def test_editing_approved_revision_sends_it_back_to_review(self):
         revision = self.new_revision(self.writer, Status.APPROVED)
