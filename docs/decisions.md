@@ -73,7 +73,7 @@
 - **Chose:** Supabase's free PostgreSQL, connected through its Session pooler URL.
 - **Rejected:** Render's free PostgreSQL.
 - **Why:** Render's free database expires after a limited period, which could be before the review happens. Supabase's direct connection is IPv6-only and Render's free tier cannot reach it, so the pooler connection string is the one to use.
-- **Status:** planned; the database will be created on Supabase when I deploy (Day 4).
+- **Status:** done in Phase 6. I used the Session pooler on port 5432, not the Transaction pooler on port 6543: the transaction pooler can hand each query to a different connection, which breaks the prepared statements the PostgreSQL driver uses. SSL is required.
 
 ## Decision 13 — One place decides who sees which sections
 
@@ -204,3 +204,27 @@
 - **Chose:** the "published per week" chart is eight bars drawn with HTML and CSS: one colour, no legend (one series), the number on hover and for this week.
 - **Rejected:** a chart library such as Chart.js or Recharts.
 - **Why:** one small chart doesn't justify a new dependency in the bundle. It is easy to read and easy to explain.
+
+## Decision 34 — Demo data goes through the real lifecycle, with the clock set back
+
+- **Chose:** a `seed_demo` command that creates 6 users, 5 sections and 40 articles by calling the same functions the API uses (`create_article`, `transition`, `edit_content`, `open_revision`, `add_comment`). To make the data look like 8 weeks of work, each step runs with Django's clock set back to the moment it "happened".
+- **Rejected:** a fixture file, or inserting rows with a status already set.
+- **Why:** inserted rows would skip the rules and leave articles with no timeline, or with a timeline that doesn't match their status. Going through the lifecycle means every article has a real history (who submitted, who approved), self-approval can't sneak into the demo, and the dashboard chart, publish times and timeline dates all agree. The data also covers what a reviewer needs to see: every status, a published revision with the old text kept, an open revision, comments, one article edited after approval, an archived section and one overdue article for the alerts.
+
+## Decision 35 — The demo can be created only once, by the build
+
+- **Chose:** `seed_demo` refuses to run if the demo users already exist. With `--skip-if-exists` it prints a message and exits normally instead; the Render build uses that when `SEED_DEMO=True`.
+- **Rejected:** a "reset" option that deletes the demo and creates it again.
+- **Why:** the timeline trigger blocks deleting events, so the demo articles can never be removed, which is exactly the rule from goal 9. A fresh demo needs a fresh database. Running it from the build is needed because Render's free plan has no shell, and `--skip-if-exists` lets every later deploy pass without touching the data.
+
+## Decision 36 — Production settings only from the environment, and safe by default
+
+- **Chose:** every secret and host-specific value comes from environment variables. `DEBUG` is off unless set to exactly `True`. On Render the app refuses to start if `DJANGO_SECRET_KEY` isn't set. In production the API answers in JSON only (the clickable "browsable API" only in development), and WhiteNoise serves the admin's static files from gunicorn.
+- **Rejected:** a separate `production.py` settings file; falling back to the development key everywhere.
+- **Why:** the development key is in the public repository, so anyone could sign their own login tokens with it if production used it. Failing to start is better than running unsafely. One settings file with environment variables keeps local and production identical except for those values.
+
+## Decision 37 — Logs show only real server errors
+
+- **Chose:** Django's request logger reports only 5xx errors. Refused requests (401, 403, 404) are not logged.
+- **Rejected:** Django's default, which logs every refused request as a warning.
+- **Why:** refusals are the app working correctly, and the tests make hundreds of them on purpose. With the default, the test output and Render's Logs tab filled up with "Forbidden" and "Unauthorized" lines, and a real error would be easy to miss.

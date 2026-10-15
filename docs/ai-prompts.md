@@ -220,3 +220,50 @@ I sent Phase 5 as two messages: the backend (steps 5.1 and 5.2), then the fronte
 - I ran `publish_due --dry-run` once on my own data.
 
 **What went wrong / what I noticed:** the "Scheduled this week" card opens the Articles page filtered to Scheduled, but that page has no date filter, so it shows all scheduled articles, soonest first. I left it and labelled the card honestly rather than adding a date filter this late.
+
+## Day 3 (continued): demo data, deployment and docs (Phase 6)
+
+### 16. Demo data and production settings
+
+I sent Phase 6 steps 1 and 2 as two prompts, and committed each one separately.
+
+> Phase 6, step 1: a command that fills an empty database with demo data: two editors and four writers with one shared password, five sections (one archived), about 40 articles in every status spread over the last 8 weeks, a published revision, an open revision, comments, and one overdue scheduled article. Everything through the same lifecycle functions as the API, so every timeline is real. Add tests.
+
+> Phase 6, step 2: get the project ready to deploy on Supabase, Render and Vercel. All secrets from environment variables, a build script for Render that runs the migrations (and the demo data once), static files, and an example environment file for the backend and the frontend. Nothing secret in the repository.
+
+**Result:** the `seed_demo` command with 12 tests (229 in total), then the production settings, `build.sh` and the `.env.example` files.
+
+**What I decided / checked:**
+- Decisions 34–37, and the finished Decision 12.
+- Before I deployed, the AI ran `build.sh`, the seed and gunicorn against a fresh database in its own workspace and called the API: the trigger and the search index were created, the chart had bars in all 8 weeks, alerts showed 1, and the app refused to start on "Render" with the development secret key.
+- I ran the full test suite on my laptop before committing.
+
+**What went wrong:** after adding logging for production, my test run on the laptop was full of "Forbidden" and "Unauthorized" lines. Nothing was failing; those were the tests' own refused requests being logged. Decision 37 fixed it.
+
+### 17. Deploying
+
+There was no code prompt for this part: I created the Supabase project (Mumbai region), the Render web service and the Vercel project, and set the environment variables, asking the AI step by step when I got stuck.
+
+**Result:**
+- Site: https://editorial-workflow-inky.vercel.app
+- API: https://editorial-api-1lb1.onrender.com
+
+**What went wrong:**
+- **Render failed twice with "bash: build.sh: No such file or directory".** Render runs the build from the top of the repository, and `build.sh` is inside `backend/`. The fix is the service's **Root Directory** setting: `backend`.
+  - The first time, I hadn't set it at all.
+  - The second time, I had typed `backend/` while a list of folder suggestions was open, and the deploy started before the setting was saved. It used the same commit and the same empty Root Directory, so it failed the same way.
+  - After the setting was saved as `backend`, the next deploy's log showed `Running build command 'bash build.sh'` and the service went live.
+- **The database was already set up.** The successful deploy's log said `No migrations to apply.` and the seed printed "Demo data already exists ... Skipping." The demo is created in one transaction, so it is either all there or not at all, and after logging in the dashboard matched the demo exactly.
+- **CORS.** The site can't call the API until Render lists the Vercel address in `CORS_ALLOWED_ORIGINS`, so that came last, after Vercel gave me the address, followed by another Render deploy.
+- **"Not Found" on the API address.** I first opened the Render address in the browser and got Django's "Not Found". That is expected: the API has nothing at its bare address, only under `/api/`. The site people use is the Vercel address.
+
+**What I checked:** logged in as Asha (editor): 38 articles in the four active sections (Sport is archived), a bar in each of the 8 weeks, and 1 overdue alert.
+
+### 18. Schema and architecture docs
+
+> Start Phase 6, step 3: the schema and architecture docs. Fill in docs/schema.md and docs/architecture.md from the actual code, not from memory. schema.md: every table with its fields, the constraints and indexes (including the timeline trigger, the search index and the alert-dismissal unique rule), and why each rule exists. architecture.md: how the pieces connect (React on Vercel → Django API on Render → PostgreSQL on Supabase), where the main rules live (lifecycle.py, access.py, listing.py, bulk.py), how a request flows from button click to database, and the deployment setup. The live site is https://editorial-workflow-inky.vercel.app and the API is https://editorial-api-1lb1.onrender.com. Also add the Phase 6 entries to decisions.md and ai-prompts.md, including the Render root-directory problem and how it was fixed.
+
+**Result:** schema.md filled in (relationships, database rules versus application rules, what I denormalised, what would break first at 100x, and a table of every rule and index with its reason); architecture.md updated for the deployed app, with the rules-by-file table and the "Approve" request path.
+
+**What I decided / checked:** the constraints, indexes and triggers in schema.md were listed from a freshly migrated database, not from the model code. That showed one thing I hadn't planned: two identical indexes on the article's author. I wrote it down in schema.md rather than changing the database this late.
+
