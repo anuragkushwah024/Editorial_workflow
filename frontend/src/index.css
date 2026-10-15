@@ -89,3 +89,17 @@ a.button.secondary { background: var(--surface); color: var(--text); border: 1px
 .status-approved { background: #e3f0ff; color: #1f4f9c; border-color: #b7d3f7; }
 .status-scheduled { background: #efe7ff; color: #5b3aa8; border-color: #d3c3f5; }
 .status-published { background: #e2f5e8; color: #1d6b3a; border-color: #b4e0c3; }
+.stack.tight { gap: 8px; }
+.revision-panel { border-left: 4px solid #d3c3f5; }
+.timeline { list-style: none; margin: 0; padding: 0 0 0 14px; border-left: 2px solid var(--border); display: flex; flex-direction: column; gap: 12px; }
+.timeline-entry { position: relative; }
+.timeline-entry::before {
+  content: ""; position: absolute; left: -20px; top: 6px; width: 10px; height: 10px;
+  border-radius: 50%; background: var(--surface); border: 2px solid var(--muted);
+}
+.timeline-entry.type-status_changed::before { border-color: var(--accent); }
+.timeline-entry.type-revision_published::before { border-color: #1d6b3a; }
+.timeline-entry.type-comment::before { border-color: #8a5a00; }
+.comment { margin: 4px 0 0; padding: 8px 12px; background: var(--bg); border-radius: 6px; white-space: pre-wrap; }
+details summary { cursor: pointer; color: var(--accent); }
+input[type="datetime-local"] { padding: 7px 8px; }
