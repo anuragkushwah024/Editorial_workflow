@@ -12,7 +12,7 @@ from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 from sections.access import visible_sections
 
-from .models import Article
+from .models import Article, ArticleRevision
 
 
 def visible_articles(user):
@@ -21,6 +21,11 @@ def visible_articles(user):
         return Article.objects.all()
     my_sections = visible_sections(user).filter(is_archived=False)
     return Article.objects.filter(section__in=my_sections)
+
+
+def visible_revisions(user):
+    """Revisions of articles this user is allowed to open."""
+    return ArticleRevision.objects.filter(article__in=visible_articles(user))
 
 
 class CanEditArticle(BasePermission):
@@ -38,3 +43,16 @@ class CanEditArticle(BasePermission):
         if request.user.is_editor:
             return True
         return article.author_id == request.user.id
+
+
+class CanEditRevision(BasePermission):
+    """Editors can edit any revision; a writer only a revision they opened."""
+
+    message = "You can only edit revisions you opened."
+
+    def has_object_permission(self, request, view, revision):
+        if request.method in SAFE_METHODS:
+            return True
+        if request.user.is_editor:
+            return True
+        return revision.created_by_id == request.user.id
