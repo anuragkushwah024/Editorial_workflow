@@ -135,6 +135,9 @@ SIMPLE_JWT = {
 # explicitly allow it. Locally Vite runs on port 5173.
 # ---------------------------------------------------------------------------
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
+# The browser hides response headers from another domain unless they are
+# listed here. The CSV download reads its file name from this one.
+CORS_EXPOSE_HEADERS = ["Content-Disposition"]
 
 # Render terminates HTTPS in front of the app.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

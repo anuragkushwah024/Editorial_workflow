@@ -16,7 +16,7 @@ export default function ArticlesPage() {
   useEffect(() => {
     api
       .get("/api/articles/")
-      .then((response) => setArticles(response.data))
+      .then((response) => setArticles(response.data.results))
       .catch((err) => setError(errorMessage(err)))
       .finally(() => setLoading(false));
   }, []);

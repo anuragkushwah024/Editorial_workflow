@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import mixins, serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -7,8 +8,13 @@ from rest_framework.response import Response
 
 from sections.access import is_assigned
 
+from accounts.permissions import IsEditor
+
 from .access import CanEditArticle, CanEditRevision, visible_articles, visible_revisions
+from .bulk import BULK_ACTIONS, MAX_ARTICLES, run_bulk
+from .calendar_export import calendar_csv_response
 from .lifecycle import edit_content, open_revision, transition
+from .listing import ArticlePagination, filter_articles
 from .models import ArticleEvent
 from .serializers import (
     ArticleSerializer,
@@ -24,6 +30,39 @@ class ScheduleInputSerializer(serializers.Serializer):
     # Optional here so the lifecycle can answer with its own clear message
     # (and check who is asking first) when the time is missing.
     scheduled_for = serializers.DateTimeField(required=False)
+
+
+class BulkInputSerializer(serializers.Serializer):
+    action = serializers.ChoiceField(
+        choices=BULK_ACTIONS, error_messages={"invalid_choice": "Action must be schedule or unpublish."}
+    )
+    ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1),
+        min_length=1,
+        max_length=MAX_ARTICLES,
+        error_messages={
+            "min_length": "Select at least one article.",
+            "max_length": "At most " + str(MAX_ARTICLES) + " articles can be changed at once.",
+        },
+    )
+    scheduled_for = serializers.DateTimeField(required=False)
+
+    def validate(self, attrs):
+        # One check for the whole batch, instead of the same rejection on every article.
+        if attrs["action"] == "schedule":
+            scheduled_for = attrs.get("scheduled_for")
+            if scheduled_for is None:
+                raise serializers.ValidationError({"scheduled_for": ["A publish time is required to schedule."]})
+            if scheduled_for <= timezone.now():
+                raise serializers.ValidationError({"scheduled_for": ["The publish time must be in the future."]})
+
+        # The same id twice would be tried twice; keep the first one only.
+        unique_ids = []
+        for article_id in attrs["ids"]:
+            if article_id not in unique_ids:
+                unique_ids.append(article_id)
+        attrs["ids"] = unique_ids
+        return attrs
 
 
 class ArticleViewSet(
@@ -46,30 +85,24 @@ class ArticleViewSet(
 
     The lifecycle rules themselves live in lifecycle.py, not here.
     There is no DELETE: an article's timeline must outlive any change to it.
-    Search, filters and pagination come in Phase 4.
+    /api/articles/?q=&section=&status=&author=&sort=&page=   search, filters, pages (listing.py)
+    /api/articles/bulk/             POST  editor: schedule or unpublish many articles (bulk.py)
+    /api/articles/calendar/         GET   Scheduled and Published articles as CSV (calendar_export.py)
     """
 
     http_method_names = ["get", "post", "patch", "head", "options"]
     permission_classes = [IsAuthenticated, CanEditArticle]
     serializer_class = ArticleSerializer
+    pagination_class = ArticlePagination
 
     def get_queryset(self):
         # Anything outside visible_articles() is a 404 for this user, so a
         # writer can't even learn that an article in another section exists.
         queryset = visible_articles(self.request.user).select_related("section", "author")
         if self.action == "list":
-            section_id = self.request.query_params.get("section")
-            if section_id is not None:
-                # One section's articles (the section page). Archived sections
-                # are included here, so an editor opening an archived section
-                # still sees its articles; writers can't see those anyway.
-                if not section_id.isdigit():
-                    raise ValidationError({"section": ["Must be a section id."]})
-                queryset = queryset.filter(section_id=int(section_id))
-            else:
-                # Archiving a section hides its articles from the default list.
-                queryset = queryset.filter(section__is_archived=False)
-            # Full search, filters, sorting and pages come in Phase 4.
+            # Search, filters and sorting (listing.py). Archived sections stay
+            # hidden unless one section is asked for.
+            return filter_articles(queryset, self.request.query_params, self.request.user)
         return queryset.order_by("-updated_at")
 
     def perform_create(self, serializer):
@@ -130,6 +163,20 @@ class ArticleViewSet(
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
     def unpublish(self, request, pk=None):
         return self.move("unpublish")
+
+    # --- many articles at once ---------------------------------------------
+
+    @action(detail=False, methods=["post"], permission_classes=[IsEditor])
+    def bulk(self, request):
+        input_serializer = BulkInputSerializer(data=request.data)
+        input_serializer.is_valid(raise_exception=True)
+        data = input_serializer.validated_data
+        result = run_bulk(request.user, data["action"], data["ids"], data.get("scheduled_for"))
+        return Response(result)
+
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
+    def calendar(self, request):
+        return calendar_csv_response(request.user)
 
     # --- timeline and comments --------------------------------------------
     # Both are POST/GET only on purpose: there is no way through the API to

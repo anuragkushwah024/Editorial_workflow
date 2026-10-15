@@ -1,4 +1,6 @@
 from django.conf import settings
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVector
 from django.db import models
 from django.db.models import Q
 
@@ -33,6 +35,14 @@ class PublishableContent(models.Model):
         abstract = True
 
 
+# What full-text search looks at: title words (weight A) count more than body
+# words (weight B). The GIN index below is built on exactly this expression,
+# and listing.py searches with the same one, so PostgreSQL can use the index.
+SEARCH_VECTOR = SearchVector("title", weight="A", config="english") + SearchVector(
+    "body", weight="B", config="english"
+)
+
+
 class Article(PublishableContent):
     """An article. Its title/body are always the *live* content once it has
     been published. Changes after publishing go through ArticleRevision."""
@@ -53,6 +63,7 @@ class Article(PublishableContent):
             models.Index(fields=["updated_at"]),
             models.Index(fields=["scheduled_for"]),
             models.Index(fields=["published_at"]),
+            GinIndex(SEARCH_VECTOR, name="article_search_idx"),
         ]
         constraints = [
             # A Scheduled article must know when it is going out.

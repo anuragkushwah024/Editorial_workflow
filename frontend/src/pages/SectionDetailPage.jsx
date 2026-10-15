@@ -16,6 +16,7 @@ export default function SectionDetailPage() {
   const [writerToAdd, setWriterToAdd] = useState("");
   const [error, setError] = useState("");
   const [articles, setArticles] = useState([]);
+  const [articleCount, setArticleCount] = useState(0);
 
   const loadSection = useCallback(() => {
     api
@@ -39,7 +40,11 @@ export default function SectionDetailPage() {
   useEffect(() => {
     api
       .get("/api/articles/", { params: { section: id } })
-      .then((response) => setArticles(response.data))
+      .then((response) => {
+        // The list comes in pages of 20; "count" is the total in this section.
+        setArticles(response.data.results);
+        setArticleCount(response.data.count);
+      })
       .catch(() => setArticles([]));
   }, [id]);
 
@@ -190,7 +195,7 @@ export default function SectionDetailPage() {
 
       <div className="stack">
         <div className="page-head">
-          <h3>Articles ({articles.length})</h3>
+          <h3>Articles ({articleCount})</h3>
           {/* A writer who can open this page is assigned to it, so they may write here too. */}
           {!section.is_archived && (
             <Link to={"/articles/new?section=" + section.id} className="button">
@@ -202,6 +207,11 @@ export default function SectionDetailPage() {
           <p className="card muted">No articles in this section yet.</p>
         ) : (
           <ArticleTable articles={articles} showSection={false} />
+        )}
+        {articleCount > articles.length && (
+          <Link to={"/articles?section=" + section.id} className="small">
+            See all {articleCount} articles in {section.name} →
+          </Link>
         )}
       </div>
     </div>
