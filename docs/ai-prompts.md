@@ -200,3 +200,23 @@ I wrote five prompts for Phase 4 (search and filters API, the Articles page, bul
 - **A test passed on Linux but failed on my Windows laptop.** The sort test created four articles within a millisecond. Windows' clock is coarser, so several got exactly the same "last updated" time, and the tie-breaker always put the newest id first, even when sorting oldest first. The fix was in both places: the tie-breaker now follows the sort direction, and the test gives each article a clearly different time. There is a new test for the tie case.
 - **One search test expected the wrong order.** It assumed "Budget phones" would rank first for "phones", but "Phone review" has the word in its title *and* body, so it ranks higher. The code was right; the test now checks what matters: a body-only match comes after title matches.
 - **The CSV downloaded without its dated file name.** The browser hides response headers from another domain, so the page couldn't read the file name. One setting (`CORS_EXPOSE_HEADERS`) fixed it. This was found while testing in the browser; the backend tests couldn't catch it.
+
+## Day 3 (continued): dashboard and alerts (Phase 5)
+
+### 15. Dashboard and alerts
+
+I sent Phase 5 as two messages: the backend (steps 5.1 and 5.2), then the frontend (5.3 and 5.4) after the backend was pushed.
+
+> Phase 5, steps 1-2 (backend): one dashboard endpoint with in review, scheduled this week, published this week and open drafts, a breakdown by status and by section, and published per week for 8 weeks including zeros. Weeks run Monday to Sunday in IST. Only articles the user can see; counted in the database. Tests including Sunday 23:59 vs Monday 00:00 IST.
+> Overdue alerts: Scheduled and past its time, for articles and revisions; a list with how late, and a count for the badge. Only editors dismiss, saved for that exact scheduled time, so the alert comes back after a reschedule. Let an editor publish a Scheduled article now, and add a `publish_due` command. Tests for detection, dismiss, the alert coming back, writers can't dismiss, and the command.
+
+> Phase 5, steps 3-4 (frontend): the dashboard page with four number cards, the breakdowns and a simple bar chart without a chart library; clicking a number or a row opens the Articles page with that filter. An Alerts link with a count badge refreshed every minute and after any action; an Alerts page with how late each item is; Publish now and Dismiss for editors only; the server's message if something is refused.
+
+**Result:** `dashboard.py`, `alerts.py` and the `publish_due` command with 31 tests (217 in total), then the dashboard page, the alerts page and the badge.
+
+**What I decided / checked:**
+- Decisions 30–33.
+- Two choices the AI made where my prompt didn't say, which I kept: the timeline names the section's owning editor when `publish_due` publishes something, and dismissing an alert is not written to the timeline (the brief's list doesn't include it, and the dismissal row records who and when).
+- I ran `publish_due --dry-run` once on my own data.
+
+**What went wrong / what I noticed:** the "Scheduled this week" card opens the Articles page filtered to Scheduled, but that page has no date filter, so it shows all scheduled articles, soonest first. I left it and labelled the card honestly rather than adding a date filter this late.

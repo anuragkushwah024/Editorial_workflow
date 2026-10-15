@@ -49,7 +49,14 @@ Sections come before articles because an article cannot exist without a section,
 - Time: about 2 hours.
 - This wins back most of the delay: Phase 5 (dashboard and alerts) is next, on Day 4, followed by demo data and deployment.
 
+**Day 3 (Phase 5), evening:**
+- Still on Oct 15 I built Phase 5: the dashboard and overdue alerts, backend first (217 tests passing), then the pages.
+- Time: about 2 hours.
+- All 10 goals are now built. Left for Phase 6: demo data, deployment, schema.md, architecture.md and SUBMISSION.md.
+
 ## What I cut
 
 - **Discarding an open revision.** If a writer abandons a revision, nobody can open a new one. I would add a "discard" move for Draft revisions next.
 - **Comments on a specific revision.** Comments belong to the article as a whole.
+- **A date filter on the Articles page.** The dashboard's "Scheduled this week" card opens all Scheduled articles, soonest first.
+- **An automatic scheduler.** `publish_due` exists, but nothing runs it on the free plan; overdue alerts cover that gap.

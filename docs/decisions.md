@@ -180,3 +180,27 @@
 - **Chose:** Python's `csv` module (which quotes commas, quotes and line breaks), a byte-order mark so Excel reads UTF-8 names correctly, and a leading `'` on any cell that starts with `=`, `+`, `-` or `@`. Publish time is in UTC (ISO format). Articles in archived sections are left out, like in the default list.
 - **Rejected:** building the lines by joining strings with commas.
 - **Why:** titles are written by users, so a title with a comma would break the columns, and a title starting with `=` could run as a formula when an editor opens the file in Excel (CSV injection).
+
+## Decision 30 — Dashboard weeks in India time, counted by the database
+
+- **Chose:** a week runs Monday 00:00 to Sunday 23:59 IST. Every number is a database COUNT (one query for the four headline numbers, GROUP BY for the breakdowns, PostgreSQL `date_trunc('week')` in IST for the chart). "Published this week" means currently Published with a publish time this week. Everything starts from the user's visible articles, and archived sections are left out.
+- **Rejected:** UTC weeks; loading articles into Python and counting there; counting every past "publish" event in the timeline.
+- **Why:** in UTC the week would start at 05:30 on Monday IST, so a piece published at 2 a.m. on Monday would land in last week. A test checks Sunday 23:59 vs Monday 00:00 IST, and another checks that the number of queries doesn't grow with the number of articles. Counting current state instead of events means an unpublished piece stops counting as published, which is what a reader of the dashboard expects.
+
+## Decision 31 — Overdue is worked out when asked, not stored
+
+- **Chose:** an article or revision is overdue when it is Scheduled and its time has passed, checked at the moment the alerts are loaded. Only dismissals are stored (Decision 10), keyed on the exact scheduled time.
+- **Rejected:** a background job that marks articles as overdue.
+- **Why:** there is no background worker on the free hosting plan, and a stored "overdue" flag could go stale. Working it out on each request is always correct. In practice the dismissal key did what I planned on Day 1: a test dismisses an alert, unpublishes, reschedules, and the alert comes back once the new time passes, with no code that "resets" anything.
+
+## Decision 32 — Scheduled can go to Published; publish_due for a scheduler
+
+- **Chose:** an editor can publish a Scheduled article or revision now (for example from its alert). A management command, `publish_due`, publishes everything whose time has come, through the same `transition()`. Its timeline entry names the section's owning editor, with a note that it was automatic.
+- **Rejected:** publishing automatically when someone happens to load a page; creating a fake "system" user for the timeline.
+- **Why:** without this, a Scheduled article had no way to go live at all. On free hosting there is no scheduler, so the command is ready for one and the overdue alerts are the safety net, which is exactly the brief's story of a nine o'clock piece nobody noticed. Naming the section owner keeps every timeline entry tied to a real, responsible person; if that person is no longer an editor, the item is skipped and stays in the alerts.
+
+## Decision 33 — A plain CSS bar chart
+
+- **Chose:** the "published per week" chart is eight bars drawn with HTML and CSS: one colour, no legend (one series), the number on hover and for this week.
+- **Rejected:** a chart library such as Chart.js or Recharts.
+- **Why:** one small chart doesn't justify a new dependency in the bundle. It is easy to read and easy to explain.
