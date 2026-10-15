@@ -10,3 +10,6 @@ venv/
 .env.*.local
 *.log
 .DS_Store
+
+# Django collectstatic output (built on Render, never committed)
+staticfiles/

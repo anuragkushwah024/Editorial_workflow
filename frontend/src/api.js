@@ -2,8 +2,14 @@ import axios from "axios";
 
 // The backend URL comes from an environment variable so the same build works
 // locally (http://localhost:8000) and on Vercel (the Render URL).
+// A trailing slash is removed, so "https://x.onrender.com/" still works.
+let apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+while (apiUrl.endsWith("/")) {
+  apiUrl = apiUrl.slice(0, -1);
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000",
+  baseURL: apiUrl,
 });
 
 const TOKEN_KEY = "editorial_access_token";
