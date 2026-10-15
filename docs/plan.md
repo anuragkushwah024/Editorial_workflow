@@ -43,6 +43,12 @@ Sections come before articles because an article cannot exist without a section,
 - Time: about 3 hours.
 - Phase 3 took longer than one day, because the article page needed more frontend work than I expected. Phases 4 and 5 (search, bulk actions, CSV, dashboard, alerts) move to Day 4, and deployment to Day 5.
 
+**Day 3 (Phase 4), afternoon:**
+- I had time left on Oct 15, so I did Phase 4 (search, filters, pages, bulk actions, calendar CSV) the same day instead of on Day 4.
+- I sent all five Phase 4 prompts as one message, but reviewed and committed it in two rounds: backend with tests (186 passing on my laptop), then the frontend, checked in the browser.
+- Time: about 2 hours.
+- This wins back most of the delay: Phase 5 (dashboard and alerts) is next, on Day 4, followed by demo data and deployment.
+
 ## What I cut
 
 - **Discarding an open revision.** If a writer abandons a revision, nobody can open a new one. I would add a "discard" move for Draft revisions next.

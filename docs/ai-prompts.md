@@ -178,3 +178,25 @@ This was built on Oct 12, right after Phase 1, and I reviewed and committed it o
 **Result:** the full article page: lifecycle buttons with a short hint when there is nothing to do, the revision panel, and the timeline with comments.
 
 **What I decided / checked:** Decision 24. The test story: a writer drafts and submits; editor 1 approves, tries a past schedule time (refused with the server's message), schedules, unpublishes and publishes; the writer opens a revision; editor 1 approves and publishes it; an editor's own article can only be approved by editor 2.
+
+## Day 3 (continued): finding articles and bulk actions (Phase 4)
+
+### 14. All of Phase 4 in one prompt
+
+I wrote five prompts for Phase 4 (search and filters API, the Articles page, bulk actions API, calendar CSV, bulk actions on the page) and sent them together as one message to save time. I asked for the work to be handed over in two rounds, backend first and then frontend, and I tested and committed each round before the next.
+
+> Phase 4: finding articles and acting on many at once.
+> - Search over title and body with PostgreSQL full-text search; filters by section, status and author, plus "my articles"; sorting by last updated, status or publish time in both directions; page numbers with the total count. Everything in the database query, visibility first. Bad input gets a clear error, never a crash.
+> - The Articles page: search box, dropdowns, sort, Previous/Next with "Showing 21–40 of 57"; choices kept in the page address; "My articles" for writers.
+> - Bulk schedule and unpublish: one endpoint for editors; each article through the same lifecycle function, handled separately; a result for every article; writers get 403; a limit on how many at once. Tests with a mixed batch.
+> - Calendar CSV: every Scheduled or Published article the user can see, sorted by publish time, as a dated .csv; titles with commas, quotes or line breaks must not break it.
+> - Bulk actions on the page: checkboxes, select all on this page, an action bar, a ✓/✗ result list, and an Export button that sends the login token.
+
+**Result:** `listing.py`, `bulk.py` and `calendar_export.py` with a search index and 42 tests (186 in total), then the new Articles page.
+
+**What I decided / checked:** Decisions 26–29. I ran the full test suite on my own laptop before committing round 1, and checked the page in the browser before committing round 2.
+
+**What went wrong:**
+- **A test passed on Linux but failed on my Windows laptop.** The sort test created four articles within a millisecond. Windows' clock is coarser, so several got exactly the same "last updated" time, and the tie-breaker always put the newest id first, even when sorting oldest first. The fix was in both places: the tie-breaker now follows the sort direction, and the test gives each article a clearly different time. There is a new test for the tie case.
+- **One search test expected the wrong order.** It assumed "Budget phones" would rank first for "phones", but "Phone review" has the word in its title *and* body, so it ranks higher. The code was right; the test now checks what matters: a body-only match comes after title matches.
+- **The CSV downloaded without its dated file name.** The browser hides response headers from another domain, so the page couldn't read the file name. One setting (`CORS_EXPOSE_HEADERS`) fixed it. This was found while testing in the browser; the backend tests couldn't catch it.

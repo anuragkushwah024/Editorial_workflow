@@ -156,3 +156,27 @@
 - **Chose:** the articles list hides articles from archived sections by default, but asking for one section (`?section=<id>`) includes them, so an editor who opens an archived section still sees its articles. Writers never see archived sections at all.
 - **Rejected:** hiding archived sections' articles everywhere.
 - **Why:** the brief says archiving hides a section "without destroying its data or its articles", so an editor must still be able to find them.
+
+## Decision 26 — PostgreSQL full-text search with a GIN index
+
+- **Chose:** search uses PostgreSQL full-text search (`to_tsvector` / `websearch_to_tsquery`, English) over title and body, with title words weighted above body words, and a GIN index on exactly that expression (migration 0003). I checked with `EXPLAIN` that the search uses the index.
+- **Rejected:** `title ILIKE '%word%' OR body ILIKE '%word%'`.
+- **Why:** a "contains" search doesn't understand word forms ("falling" doesn't find "falls"), can't rank results, and has to read every article, so it gets slower as the table grows. Full-text search does all three. The "websearch" mode also accepts what people type: several words, "quoted phrases" and `-excluded` words. The price is that the search is tied to PostgreSQL, which I already chose in Decision 2.
+
+## Decision 27 — Page numbers with a total count, and a stable order
+
+- **Chose:** pages of 20 with `count`, `page` and `total_pages` in every response. Every sort has the article id as a tie-breaker, in the same direction as the sort.
+- **Rejected:** "load more" cursor pagination.
+- **Why:** the brief asks for "pagination showing the total number of matches", and page numbers give that directly. Cursor pagination is faster on huge tables, but it can't say "page 3 of 12". The tie-breaker makes the order the same every time, so two articles updated in the same instant can't swap places between pages (see the Windows test in ai-prompts.md).
+
+## Decision 28 — Bulk actions: one transaction per article
+
+- **Chose:** the bulk endpoint calls the same `transition()` as a single move for each article, and each one commits on its own. The response lists every article with its new status, or the reason it was rejected. Unknown ids and articles the editor can't see get the same "Article not found." A time in the past rejects the whole request before anything changes.
+- **Rejected:** one transaction around the whole batch.
+- **Why:** the brief says one illegal move must not fail the whole batch, so each article needs its own transaction. Going through `transition()` means bulk actions can't skip a rule, and each change still gets its own timeline entry. Checking the time once at the start avoids twenty identical rejections.
+
+## Decision 29 — Calendar CSV: safe for spreadsheets
+
+- **Chose:** Python's `csv` module (which quotes commas, quotes and line breaks), a byte-order mark so Excel reads UTF-8 names correctly, and a leading `'` on any cell that starts with `=`, `+`, `-` or `@`. Publish time is in UTC (ISO format). Articles in archived sections are left out, like in the default list.
+- **Rejected:** building the lines by joining strings with commas.
+- **Why:** titles are written by users, so a title with a comma would break the columns, and a title starting with `=` could run as a formula when an editor opens the file in Excel (CSV injection).
