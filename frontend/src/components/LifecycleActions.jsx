@@ -1,5 +1,6 @@
 import { useState } from "react";
 import api, { errorMessage } from "../api";
+import { useAlerts } from "../AlertsContext";
 import { useAuth } from "../AuthContext";
 
 // The lifecycle buttons for an article or a revision ("item").
@@ -15,6 +16,7 @@ import { useAuth } from "../AuthContext";
 //   onDone    called after a successful move, to reload the page
 export default function LifecycleActions({ item, kind, authorId, onDone }) {
   const { user, isEditor } = useAuth();
+  const { refreshAlerts } = useAlerts();
   const [scheduleAt, setScheduleAt] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -26,7 +28,8 @@ export default function LifecycleActions({ item, kind, authorId, onDone }) {
   const canSubmit = status === "DRAFT" && isAuthor;
   const canApprove = status === "IN_REVIEW" && isEditor && !isAuthor;
   const canSchedule = status === "APPROVED" && isEditor;
-  const canPublish = status === "APPROVED" && isEditor;
+  // A Scheduled item can also be published now (e.g. when it is overdue).
+  const canPublish = (status === "APPROVED" || status === "SCHEDULED") && isEditor;
   // A published revision is already part of the article, so only a scheduled one can be unpublished.
   let canUnpublish = false;
   if (isEditor) {
@@ -49,6 +52,7 @@ export default function LifecycleActions({ item, kind, authorId, onDone }) {
       await api.post(base + item.id + "/" + action + "/", data || {});
       setScheduleAt("");
       onDone();
+      refreshAlerts(); // publishing or unpublishing can change the overdue count
     } catch (err) {
       setError(errorMessage(err));
     } finally {

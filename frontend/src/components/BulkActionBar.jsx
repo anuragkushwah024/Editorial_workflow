@@ -1,11 +1,13 @@
 import { useState } from "react";
 import api, { errorMessage } from "../api";
+import { useAlerts } from "../AlertsContext";
 import { statusLabel } from "../articles";
 
 // Shown to editors when articles are selected on the Articles page (goal 7).
 // The server handles each article on its own and reports back per article,
 // so some can succeed while others are rejected.
 export default function BulkActionBar({ selectedIds, titles, onDone, onClear }) {
+  const { refreshAlerts } = useAlerts();
   const [scheduleAt, setScheduleAt] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -28,6 +30,7 @@ export default function BulkActionBar({ selectedIds, titles, onDone, onClear }) 
       setResult(response.data);
       setScheduleAt("");
       onDone();
+      refreshAlerts();
     } catch (err) {
       // A problem with the whole request (e.g. a time in the past).
       setError(errorMessage(err));

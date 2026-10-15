@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./AuthContext";
 import Layout from "./components/Layout";
 import RequireAuth from "./components/RequireAuth";
+import AlertsPage from "./pages/AlertsPage";
 import ArticleFormPage from "./pages/ArticleFormPage";
 import ArticlePage from "./pages/ArticlePage";
 import ArticlesPage from "./pages/ArticlesPage";
@@ -30,6 +31,7 @@ export default function App() {
             <Route path="/articles/new" element={<ArticleFormPage />} />
             <Route path="/articles/:id" element={<ArticlePage />} />
             <Route path="/articles/:id/edit" element={<ArticleFormPage />} />
+            <Route path="/alerts" element={<AlertsPage />} />
           </Route>
         </Routes>
       </BrowserRouter>
