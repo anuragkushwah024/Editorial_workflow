@@ -138,3 +138,43 @@ This was built on Oct 12, right after Phase 1, and I reviewed and committed it o
 - I asked for one central function so the rules can be read in one place (Decision 19).
 - The timeline also stores the person's role at that moment, so the history stays correct if their role changes later.
 - I committed the lifecycle code and its tests separately.
+
+## Day 3: finishing articles (Phase 3, steps 3-6)
+
+### 10. Revisions
+
+> Phase 3, step 3: revisions. A Published article's content can't be edited directly, so the author (or an editor) opens a revision instead. A revision starts at Draft and goes through the same lifecycle and the same rules as an article. The live article keeps its current text until the revision itself is published; then the revision's title and body replace it. Only one open revision per article at a time. Record "revision opened" and "revision published" in the timeline. Add tests.
+
+**Result:** revisions on top of the existing lifecycle code, with 26 tests (124 in total).
+
+**What I decided / checked:** see Decision 22. The AI pointed out one gap: an abandoned open revision can't be discarded yet, so no new one can be opened. I left it out for now (see plan.md, "What I cut").
+
+**What went wrong:** one test failed at first. The test setup created a Scheduled revision without a publish time, and the database refused it ("Scheduled needs a time", a rule from Phase 1). The rule did its job; the test setup was fixed.
+
+### 11. Timeline and comments API
+
+> Phase 3, step 4: the article timeline and comments. An endpoint that returns the full timeline, oldest first, with who did what and when, and which revision an entry belongs to. Anyone who can see the article can see its timeline; a writer outside the section gets 404. Editors and writers who can see the article can comment; comments are timeline entries, so nobody can edit or delete them. No edit or delete endpoint at all. Empty comments rejected. Add tests.
+
+**Result:** a read-only timeline endpoint and a comments endpoint, with 16 tests (140 in total).
+
+**What I decided / checked:** Decision 23. The tests also try PATCH, PUT and DELETE on the timeline and comments, and posting a fake status change as a comment.
+
+**What went wrong:** the timeline code ended up inside the "Revisions" commit. The files for this step were updated before I had committed step 3.3, so that commit picked up both. The commit was already pushed, so I left the history as it is instead of force-pushing; the timeline tests are in their own commit. Since then I commit and push each step before asking for the next one.
+
+### 12. Article list and forms
+
+> Phase 3, step 5: article pages, part 1. An Articles page with title, section, author, status and last updated. Opening a section shows its articles (add a simple section filter to the API). A New article form where a writer can only pick their assigned sections and an editor any active section. An edit form for title and body. Show the server's error messages. The frontend only hides buttons; the server enforces the rules.
+
+**Result:** the Articles page, the section's article list, new and edit forms, a simple article page, and a `?section=` filter with 4 tests (144 in total).
+
+**What I decided / checked:** Decision 25 for archived sections.
+
+**What went wrong:** my prompt used "editing an article that's under review" as an example of a server error, but my own lifecycle allows editing an In Review article. The real case is editing a Published article, which the server refuses. I also sent the next prompt before pushing this step; the AI checked GitHub, saw it wasn't there, and I committed and pushed first.
+
+### 13. Article page
+
+> Phase 3, step 6: article pages, part 2. An article page with title, body, section, author, status and publish time. Only the lifecycle buttons this user can use right now, with a date and time picker for scheduling. Show the server's message when a move is rejected. For a published article, an "Open revision" button and a revision panel with the same buttons, with the live text above it until the revision is published. The timeline and a comment box at the bottom. I'll test it as a writer and two different editors.
+
+**Result:** the full article page: lifecycle buttons with a short hint when there is nothing to do, the revision panel, and the timeline with comments.
+
+**What I decided / checked:** Decision 24. The test story: a writer drafts and submits; editor 1 approves, tries a past schedule time (refused with the server's message), schedules, unpublishes and publishes; the writer opens a revision; editor 1 approves and publishes it; an editor's own article can only be approved by editor 2.

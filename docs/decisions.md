@@ -129,3 +129,30 @@
 - **Chose:** editing an Approved or Scheduled article moves it back to In Review and clears its scheduled time. A Published article can't be edited at all (revisions come next). When an article is published, the exact title and body that went live are copied into the timeline entry.
 - **Rejected:** allowing small edits after approval without a new review.
 - **Why:** otherwise text could change after an editor signed it off. Saving the published text answers the brief's "nobody can say what the original said".
+
+## Decision 22 — Revisions reuse the article lifecycle
+
+- **Chose:** the same code in `lifecycle.py` handles an article and a revision. Revisions go Draft → In Review → Approved → Scheduled/Published with the same rules, including no self-approval (whoever opened the revision can't approve it). Only one open revision per article; the database also enforces this.
+- **Rejected:** a separate, simpler flow for revisions, or letting editors change published text directly.
+- **Why:** the brief says a revision "starts its own path at Draft", so the rules are the same, and one copy of them can't drift apart. Smaller choices where the brief was silent:
+  - the article keeps its original publish time when a revision goes live: a correction is not a new publication;
+  - a published revision can't be unpublished, because it is already part of the article; to take the piece down, you unpublish the article;
+  - a revision can't go live if the article was unpublished in the meantime.
+
+## Decision 23 — The timeline is written only by the server
+
+- **Chose:** the timeline API is read-only, and comments are added through their own POST endpoint that always stores a COMMENT entry from the logged-in user. There is no edit or delete endpoint for any entry; the database trigger from Phase 1 blocks changes underneath as well.
+- **Rejected:** a normal create/update/delete API for comments.
+- **Why:** goal 9 says nothing in the timeline can change, not even by editors. If the API never offers a way, a bug in the frontend can't create one either. Status changes store the person's role at that moment; other entries show their current role, which is a small trade-off I accepted.
+
+## Decision 24 — The frontend hides buttons; the server decides
+
+- **Chose:** the article page shows only the buttons the user can use right now (no Approve on your own article, no Edit on a published one), and shows the server's own message when it refuses something. After every action the page reloads the article, revisions and timeline from the server.
+- **Rejected:** working out the new state in the browser after each click.
+- **Why:** goal 1 says the rules must be enforced on the server, so the frontend's checks are only for a clean screen. Reloading from the server means the page never shows a guess.
+
+## Decision 25 — A section's page shows its articles even when archived
+
+- **Chose:** the articles list hides articles from archived sections by default, but asking for one section (`?section=<id>`) includes them, so an editor who opens an archived section still sees its articles. Writers never see archived sections at all.
+- **Rejected:** hiding archived sections' articles everywhere.
+- **Why:** the brief says archiving hides a section "without destroying its data or its articles", so an editor must still be able to find them.

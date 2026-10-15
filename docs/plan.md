@@ -34,9 +34,16 @@ Sections come before articles because an article cannot exist without a section,
 **Day 2 (Phase 3, steps 1-2):**
 - Later on Oct 14 I started Phase 3: the articles API (who can create, see and edit), then the lifecycle (submit, approve, schedule, publish, unpublish, and the edit rules).
 - Each step: my prompt, then tests (98 passing), then separate commits for code and tests.
-- Time: about __ hours.
+- Time: about 2 hours.
 - Left for Day 3: revisions, the timeline and comments API, and the article pages. This pushes Phase 4 a little later than planned.
+
+**Day 3 (Phase 3, steps 3-6):**
+- Oct 15: revisions, the timeline and comments API, then the article pages (list, forms, and the article page with lifecycle buttons, revisions and timeline).
+- Each step: my prompt, then tests (144 passing), checked in the browser, then committed and pushed before the next step.
+- Time: about 3 hours.
+- Phase 3 took longer than one day, because the article page needed more frontend work than I expected. Phases 4 and 5 (search, bulk actions, CSV, dashboard, alerts) move to Day 4, and deployment to Day 5.
 
 ## What I cut
 
-Nothing yet.
+- **Discarding an open revision.** If a writer abandons a revision, nobody can open a new one. I would add a "discard" move for Draft revisions next.
+- **Comments on a specific revision.** Comments belong to the article as a whole.
