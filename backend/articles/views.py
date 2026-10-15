@@ -58,8 +58,18 @@ class ArticleViewSet(
         # writer can't even learn that an article in another section exists.
         queryset = visible_articles(self.request.user).select_related("section", "author")
         if self.action == "list":
-            # Archiving a section hides its articles from the default list too.
-            queryset = queryset.filter(section__is_archived=False)
+            section_id = self.request.query_params.get("section")
+            if section_id is not None:
+                # One section's articles (the section page). Archived sections
+                # are included here, so an editor opening an archived section
+                # still sees its articles; writers can't see those anyway.
+                if not section_id.isdigit():
+                    raise ValidationError({"section": ["Must be a section id."]})
+                queryset = queryset.filter(section_id=int(section_id))
+            else:
+                # Archiving a section hides its articles from the default list.
+                queryset = queryset.filter(section__is_archived=False)
+            # Full search, filters, sorting and pages come in Phase 4.
         return queryset.order_by("-updated_at")
 
     def perform_create(self, serializer):

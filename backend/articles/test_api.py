@@ -232,3 +232,27 @@ class EditTests(ArticleApiTestCase):
         response = self.client.delete(self.url(self.tech_article))
         self.assertEqual(response.status_code, 405)
         self.assertTrue(Article.objects.filter(pk=self.tech_article.pk).exists())
+
+
+class SectionFilterTests(ArticleApiTestCase):
+    def test_section_filter_shows_only_that_sections_articles(self):
+        self.as_user(self.editor)
+        response = self.client.get("/api/articles/?section=" + str(self.tech.id))
+        self.assertEqual(self.titles(response), ["New phones"])
+
+    def test_writer_filtering_an_unassigned_section_gets_nothing(self):
+        self.as_user(self.writer)
+        response = self.client.get("/api/articles/?section=" + str(self.politics.id))
+        self.assertEqual(response.data, [])
+
+    def test_editor_sees_articles_of_an_archived_section_when_asking_for_it(self):
+        self.tech.is_archived = True
+        self.tech.save()
+        self.as_user(self.editor)
+        response = self.client.get("/api/articles/?section=" + str(self.tech.id))
+        self.assertEqual(self.titles(response), ["New phones"])
+
+    def test_section_filter_must_be_a_number(self):
+        self.as_user(self.editor)
+        response = self.client.get("/api/articles/?section=tech")
+        self.assertEqual(response.status_code, 400)
