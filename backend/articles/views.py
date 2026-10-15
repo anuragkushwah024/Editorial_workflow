@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import mixins, serializers, viewsets
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -10,9 +10,11 @@ from sections.access import is_assigned
 
 from accounts.permissions import IsEditor
 
+from .alerts import dismiss, overdue_items
 from .access import CanEditArticle, CanEditRevision, visible_articles, visible_revisions
 from .bulk import BULK_ACTIONS, MAX_ARTICLES, run_bulk
 from .calendar_export import calendar_csv_response
+from .dashboard import dashboard_data
 from .lifecycle import edit_content, open_revision, transition
 from .listing import ArticlePagination, filter_articles
 from .models import ArticleEvent
@@ -275,3 +277,38 @@ class RevisionViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
     def unpublish(self, request, pk=None):
         return self.move("unpublish")
+
+
+# --- dashboard and alerts (Phase 5) ---------------------------------------
+
+
+class DismissAlertSerializer(serializers.Serializer):
+    article_id = serializers.IntegerField(min_value=1)
+    revision_id = serializers.IntegerField(min_value=1, required=False, allow_null=True)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def dashboard(request):
+    """GET /api/dashboard/ : the numbers for the landing page (dashboard.py)."""
+    return Response(dashboard_data(request.user))
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def alerts(request):
+    """GET /api/alerts/ : overdue items this user can see, and their count (alerts.py)."""
+    items = overdue_items(request.user)
+    return Response({"count": len(items), "results": items})
+
+
+@api_view(["POST"])
+@permission_classes([IsEditor])
+def dismiss_alert(request):
+    """POST /api/alerts/dismiss/ {"article_id": 1, "revision_id": null} : editors only."""
+    input_serializer = DismissAlertSerializer(data=request.data)
+    input_serializer.is_valid(raise_exception=True)
+    data = input_serializer.validated_data
+    dismiss(request.user, data["article_id"], data.get("revision_id"))
+    items = overdue_items(request.user)
+    return Response({"count": len(items), "results": items})

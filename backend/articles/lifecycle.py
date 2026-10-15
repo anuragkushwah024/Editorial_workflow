@@ -60,10 +60,12 @@ TRANSITIONS = {
         "wrong_status": "Only an Approved {thing} can be scheduled.",
     },
     "publish": {
-        "from": [Status.APPROVED],
+        # From Scheduled too: that is how a scheduled article goes live, either
+        # by an editor (e.g. from an overdue alert) or by the publish_due command.
+        "from": [Status.APPROVED, Status.SCHEDULED],
         "to": Status.PUBLISHED,
         "who": "editor",
-        "wrong_status": "Only an Approved {thing} can be published.",
+        "wrong_status": "Only an Approved or Scheduled {thing} can be published.",
     },
     "unpublish": {
         "from": [Status.SCHEDULED, Status.PUBLISHED],
@@ -182,8 +184,12 @@ def _set_status(item, new_status, user, message="", payload=None):
 
 # --- the public functions --------------------------------------------------
 
-def transition(item, action, user, scheduled_for=None):
-    """Make one lifecycle move, or raise an error explaining why it isn't allowed."""
+def transition(item, action, user, scheduled_for=None, message=""):
+    """Make one lifecycle move, or raise an error explaining why it isn't allowed.
+
+    `message` is an optional note for the timeline entry, e.g. when the
+    publish_due command publishes something automatically.
+    """
     rule = TRANSITIONS[action]
 
     with transaction.atomic():
@@ -218,6 +224,11 @@ def transition(item, action, user, scheduled_for=None):
         elif action == "publish":
             item.published_at = timezone.now()
             payload["published_at"] = item.published_at.isoformat()
+            if item.scheduled_for is not None:
+                # It was scheduled; keep the planned time in the history, and
+                # clear it on the item, because published_at is now the truth.
+                payload["was_scheduled_for"] = item.scheduled_for.isoformat()
+                item.scheduled_for = None
             # Keep exactly what went live, so "what did the original say?"
             # can always be answered from the timeline.
             payload["title"] = item.title
@@ -227,7 +238,7 @@ def transition(item, action, user, scheduled_for=None):
             item.scheduled_for = None
             item.published_at = None
 
-        _set_status(item, rule["to"], user, payload=payload)
+        _set_status(item, rule["to"], user, message=message, payload=payload)
 
         if _is_revision(item) and action == "publish":
             _apply_revision(item, user)
