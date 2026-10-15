@@ -1,12 +1,8 @@
-from django.db import transaction
 from django.utils import timezone
 from rest_framework import mixins, serializers, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
-from sections.access import is_assigned
 
 from accounts.permissions import IsEditor
 
@@ -15,9 +11,8 @@ from .access import CanEditArticle, CanEditRevision, visible_articles, visible_r
 from .bulk import BULK_ACTIONS, MAX_ARTICLES, run_bulk
 from .calendar_export import calendar_csv_response
 from .dashboard import dashboard_data
-from .lifecycle import edit_content, open_revision, transition
+from .lifecycle import add_comment, create_article, edit_content, open_revision, transition
 from .listing import ArticlePagination, filter_articles
-from .models import ArticleEvent
 from .serializers import (
     ArticleSerializer,
     ArticleUpdateSerializer,
@@ -108,23 +103,9 @@ class ArticleViewSet(
         return queryset.order_by("-updated_at")
 
     def perform_create(self, serializer):
-        user = self.request.user
-        section = serializer.validated_data["section"]
-
-        if user.is_writer and not is_assigned(user, section):
-            raise PermissionDenied("You can only create articles in sections you are assigned to.")
-        if section.is_archived:
-            raise ValidationError({"section_id": ["This section is archived. Restore it first."]})
-
-        # The article and its first timeline entry are saved together or not at all.
-        with transaction.atomic():
-            article = serializer.save(author=user)
-            ArticleEvent.objects.create(
-                article=article,
-                event_type=ArticleEvent.Type.CREATED,
-                to_status=article.status,
-                actor=user,
-            )
+        # Who may create where is checked in lifecycle.create_article().
+        data = serializer.validated_data
+        serializer.instance = create_article(self.request.user, data["section"], data["title"], data["body"])
 
     def partial_update(self, request, pk=None):
         # get_object() checks visibility (404) and CanEditArticle (403).
@@ -197,12 +178,7 @@ class ArticleViewSet(
         article = self.get_object()
         input_serializer = CommentInputSerializer(data=request.data)
         input_serializer.is_valid(raise_exception=True)
-        event = ArticleEvent.objects.create(
-            article=article,
-            event_type=ArticleEvent.Type.COMMENT,
-            actor=request.user,
-            message=input_serializer.validated_data["message"],
-        )
+        event = add_comment(article, request.user, input_serializer.validated_data["message"])
         return Response(EventSerializer(event).data, status=201)
 
     # --- revisions -------------------------------------------------------

@@ -23,7 +23,7 @@ for the item's current status or input.
 from django.db import IntegrityError, transaction
 from django.db.models import Max
 from django.utils import timezone
-from rest_framework.exceptions import APIException, PermissionDenied
+from rest_framework.exceptions import APIException, PermissionDenied, ValidationError
 
 from .models import Article, ArticleEvent, ArticleRevision, Status
 
@@ -183,6 +183,34 @@ def _set_status(item, new_status, user, message="", payload=None):
 
 
 # --- the public functions --------------------------------------------------
+
+def create_article(user, section, title, body):
+    """Create a Draft article with its first timeline entry.
+
+    Used by the API and by the seed_demo command, so both follow the same rules.
+    """
+    if user.is_writer and not section.assignments.filter(writer=user).exists():
+        raise PermissionDenied("You can only create articles in sections you are assigned to.")
+    if section.is_archived:
+        raise ValidationError({"section_id": ["This section is archived. Restore it first."]})
+
+    # The article and its first timeline entry are saved together or not at all.
+    with transaction.atomic():
+        article = Article.objects.create(section=section, author=user, title=title, body=body)
+        _record(article, ArticleEvent.Type.CREATED, user, to_status=article.status)
+    return article
+
+
+def add_comment(article, user, message):
+    """Add a comment. Comments are timeline entries, so they can never change."""
+    event = ArticleEvent.objects.create(
+        article=article,
+        event_type=ArticleEvent.Type.COMMENT,
+        actor=user,
+        message=message,
+    )
+    return event
+
 
 def transition(item, action, user, scheduled_for=None, message=""):
     """Make one lifecycle move, or raise an error explaining why it isn't allowed.
