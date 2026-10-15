@@ -70,3 +70,22 @@ button.danger { background: var(--danger); }
 .plain-list li { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
 a { color: var(--accent); }
 .card p { margin: 0; }
+
+/* Session 3: articles */
+a.button {
+  display: inline-block; padding: 8px 14px; border-radius: 6px; text-decoration: none;
+  background: var(--accent); color: white; font-weight: 400;
+}
+a.button.secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+.form.wide { max-width: 760px; }
+.notice { background: #fff8e1; border: 1px solid #f0d77b; border-radius: 6px; padding: 10px 12px; }
+.article-body { white-space: pre-wrap; line-height: 1.6; }
+.status {
+  display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 10px;
+  border: 1px solid transparent; white-space: nowrap;
+}
+.status-draft { background: #f1f2f4; color: #4b5563; border-color: #dfe2e6; }
+.status-in_review { background: #fff4d6; color: #8a5a00; border-color: #f2d58a; }
+.status-approved { background: #e3f0ff; color: #1f4f9c; border-color: #b7d3f7; }
+.status-scheduled { background: #efe7ff; color: #5b3aa8; border-color: #d3c3f5; }
+.status-published { background: #e2f5e8; color: #1d6b3a; border-color: #b4e0c3; }

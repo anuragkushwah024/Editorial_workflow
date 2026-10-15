@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import api, { errorMessage } from "../api";
 import { useAuth } from "../AuthContext";
+import ArticleTable from "../components/ArticleTable";
 import SectionForm from "../components/SectionForm";
 
 export default function SectionDetailPage() {
@@ -14,6 +15,7 @@ export default function SectionDetailPage() {
   const [editing, setEditing] = useState(false);
   const [writerToAdd, setWriterToAdd] = useState("");
   const [error, setError] = useState("");
+  const [articles, setArticles] = useState([]);
 
   const loadSection = useCallback(() => {
     api
@@ -31,6 +33,15 @@ export default function SectionDetailPage() {
   useEffect(() => {
     loadSection();
   }, [loadSection]);
+
+  // Opening a section shows its articles (goal 3). The server only returns
+  // articles this user may see.
+  useEffect(() => {
+    api
+      .get("/api/articles/", { params: { section: id } })
+      .then((response) => setArticles(response.data))
+      .catch(() => setArticles([]));
+  }, [id]);
 
   useEffect(() => {
     if (isEditor) {
@@ -177,9 +188,21 @@ export default function SectionDetailPage() {
         {isEditor && section.is_archived && <p className="muted small">Restore the section to change its writers.</p>}
       </div>
 
-      <div className="card">
-        <h3>Articles</h3>
-        <p className="muted">Articles in this section will appear here (Session 3).</p>
+      <div className="stack">
+        <div className="page-head">
+          <h3>Articles ({articles.length})</h3>
+          {/* A writer who can open this page is assigned to it, so they may write here too. */}
+          {!section.is_archived && (
+            <Link to={"/articles/new?section=" + section.id} className="button">
+              New article in {section.name}
+            </Link>
+          )}
+        </div>
+        {articles.length === 0 ? (
+          <p className="card muted">No articles in this section yet.</p>
+        ) : (
+          <ArticleTable articles={articles} showSection={false} />
+        )}
       </div>
     </div>
   );

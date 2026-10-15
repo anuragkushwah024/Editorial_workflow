@@ -11,6 +11,7 @@ export default function Layout() {
           <NavLink to="/" end>
             Dashboard
           </NavLink>
+          <NavLink to="/articles">Articles</NavLink>
           <NavLink to="/sections">{isEditor ? "Sections" : "My sections"}</NavLink>
         </nav>
         <div className="user-box">
