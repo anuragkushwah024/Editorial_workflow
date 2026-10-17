@@ -54,6 +54,18 @@ Sections come before articles because an article cannot exist without a section,
 - Time: about 2 hours.
 - All 10 goals are now built. Left for Phase 6: demo data, deployment, schema.md, architecture.md and SUBMISSION.md.
 
+**Day 3 (Phase 6), evening:**
+- Still on Oct 15: demo data (`seed_demo`), production settings, then deploying to Supabase, Render and Vercel, then schema.md, architecture.md and SUBMISSION.md.
+- 229 backend tests passing. I checked every goal on the live site with a click-through list, logged in as both editors and two writers.
+- Time: about 1.5 hours. Most of it went on deployment, and the Render Root Directory problem in particular (ai-prompts.md, entry 17).
+
+## Total
+
+- **Estimate:** 12 hours over about a week.
+- **Actual:** about 16 hours: Phases 1–5 about 13–14 hours (the entries above), plus Phase 6.
+- **Where it went over:** Phase 3, the article page, which was much more frontend work than I planned. Deployment also took longer than its size suggests.
+- **What went faster:** Phases 4 and 5 fitted into the same day as the end of Phase 3, so everything was finished by the end of Day 3 instead of the Day 5 I expected after Phase 3 slipped.
+
 ## What I cut
 
 - **Discarding an open revision.** If a writer abandons a revision, nobody can open a new one. I would add a "discard" move for Draft revisions next.

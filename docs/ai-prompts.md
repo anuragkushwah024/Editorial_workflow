@@ -267,3 +267,15 @@ There was no code prompt for this part: I created the Supabase project (Mumbai r
 
 **What I decided / checked:** the constraints, indexes and triggers in schema.md were listed from a freshly migrated database, not from the model code. That showed one thing I hadn't planned: two identical indexes on the article's author. I wrote it down in schema.md rather than changing the database this late.
 
+### 19. Submission
+
+> Phase 6, step 4: finish the submission. Fill in SUBMISSION.md, keeping its template's headings: the links; notes for the reviewer (the Render backend sleeps after 15 minutes, the demo data is already loaded, Sport is the archived section, "Satellite internet trials begin in hill districts" is the overdue article); demo credentials for both editors and the four writers with their sections; the stack with a one-line reason for each, pointing to decisions.md; all 10 goals with Done or Partial, honestly, with where to see each one on the live site and what I cut; time spent, what I'd do next with 12 more hours, and what I'm least happy with, in my own voice. Before filling in the checklist, give me a short list of things to click on the live site so I can check each goal myself. Leave the hours as `__`. Also add the final plan.md entry and the last ai-prompts.md entry.
+
+**Result:** a 12-step click-through list, then SUBMISSION.md, the last plan.md entry and this entry.
+
+**What I decided / checked:**
+- I went through the list on the live site as Asha, Bina, Chirag and Farhan, and every step worked. That included the overdue alert coming back after I dismissed it, unpublished the article and scheduled it two minutes ahead, and Bina having no Approve button on her own article while Asha did.
+- Goal 5 is marked Partial, because of the visibility rule in Decision 17 (Farhan's Sport articles are missing from his "My articles"). Everything else is marked Done, with the cuts written next to the goal they touch.
+- I added a note that the demo history is fixed to mid-October 2026, so a later review will see the chart's newest weeks empty and more overdue alerts.
+- I filled in the hours myself.
+
